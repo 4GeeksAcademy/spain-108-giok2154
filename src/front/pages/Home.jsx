@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
 import carrusel1 from "../assets/img/carrusel1.png";
 import carrusel2 from "../assets/img/carrusel2.png";
@@ -10,33 +9,33 @@ const carouselImages = [carrusel1, carrusel2, carrusel3, carrusel4];;
 const cardsData = [
   {
     id: 1,
-    title: "trailer",
-    videoUrl: "https://www.youtube.com/embed/kJQP7kiw5Fk",
+    title: "Trailer 1",
+    videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
   {
     id: 2,
-    title: "Video 2",
-    videoUrl: "https://www.youtube.com/embed/IrUFd1DKeE8",
+    title: "Trailer 2",
+    videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
   {
     id: 3,
-    title: "Video 3",
-    videoUrl: "https://www.youtube.com/embed/kJQP7kiw5Fk",
+    title: "Trailer 3",
+    videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
   {
     id: 4,
-    title: "Video 4",
-    videoUrl: "https://www.youtube.com/embed/ScMzIvxBSi4",
+    title: "Trailer 4",
+    videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
   {
     id: 5,
-    title: "Video 5",
+    title: "Trailer 5",
     videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
   {
     id: 6,
-    title: "Video 6",
-    videoUrl: "https://www.youtube.com/embed/9bZkp7q19f0",
+    title: "Trailer 6",
+    videoUrl: "https://www.youtube.com/embed/C0DPdy98e4c",
   },
 ];
 
@@ -44,30 +43,7 @@ const cardsData = [
 export const Home = () => {
   const { store, dispatch } = useGlobalReducer();
 
-  const loadMessage = async () => {
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-      if (!backendUrl) throw new Error("VITE_BACKEND_URL is not defined in .env file");
-
-      const response = await fetch(backendUrl + "/api/hello");
-      const data = await response.json();
-
-      if (response.ok) dispatch({ type: "set_hello", payload: data.message });
-
-      return data;
-    } catch (error) {
-      if (error.message)
-        throw new Error(
-          `Could not fetch the message from the backend.
-           Please check if the backend is running and the backend port is public.`
-        );
-    }
-  };
-
-  useEffect(() => {
-    loadMessage();
-  }, []);
 
   return (
     <div style={{ backgroundColor: "black", minHeight: "100vh", color: "white" }}>
@@ -153,16 +129,7 @@ export const Home = () => {
 
 
 
-      {/* Mensaje cargado del backend */}
-      <div className="text-center mb-5">
-        {store.message ? (
-          <span>{store.message}</span>
-        ) : (
-          <span className="text-danger">
-            Loading message from the backend (make sure your python 🐍 backend is running)...
-          </span>
-        )}
-      </div>
+   
     </div>
   );
 };
