@@ -20,28 +20,48 @@ export const Contacts = () => {
     return (
         <div className="container">
             <h1>Contacts</h1>
-            <div className="row aling-end">
-            <Link  to={"/form-contact"} className="btn btn-primary">Agregar Contacto</Link>
-            </div>
-
             {store.contacts.map((item) =>
                 <div key={item.id} className="card mb-3">
-                    <div className="row g-0">
-                        <div className="col-md-4">
-                            <img src={avatar} className="img-fluid rounded-start" alt="..." />
+                    <div className="row g-0 align-items-center">
+                        {/* Imagen */}
+                        <div className="col-12 col-md-4 text-center p-3">
+                            <img src={avatar} className="img-fluid rounded-start" alt="avatar" />
                         </div>
-                        <div className="col-md-8">
-                            <div className="card-body">
-                                <h5 className="card-title">{item.name}</h5>
-                                <p className="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
-                                <p className="card-text"><small className="text-body-secondary">Last updated 3 mins ago</small></p>
+
+                        {/* Contenido + iconos */}
+                        <div className="col-12 col-md-8">
+                            <div className="card-body d-flex flex-column flex-md-row justify-content-between align-items-start">
+
+                                {/* Información */}
+                                <div>
+                                    <h5 className="card-title">{item.name}</h5>
+                                    <p className="card-text">{item.phone}</p>
+                                    <p className="card-text">
+                                        <small className="text-body-secondary">{item.email}</small>
+                                    </p>
+                                    <p className="card-text">
+                                        <small className="text-body-secondary">{item.address}</small>
+                                    </p>
+                                </div>
+
+                                {/* Iconos */}
+                                <div className="text-md-end mt-3 mt-md-0">
+                                    <spam className="btn btn-sm btn-outline-primary me-2 mb-2">
+                                        <i className="fa-solid fa-pen-to-square"></i>
+                                    </spam>
+                                    <spam className="btn btn-sm btn-outline-danger mb-2">
+                                        <i className="fa-solid fa-trash"></i>
+                                    </spam>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-
+            <div className="row aling-end">
+                <Link to={"/form-contact"} className="btn btn-primary">Agregar Contacto</Link>
+            </div>
         </div>
     )
 }

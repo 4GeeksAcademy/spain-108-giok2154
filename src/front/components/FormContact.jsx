@@ -2,26 +2,31 @@
 // en el handelsubmit: preven defaul, despues ejecutar el POST que tengo definido en el service de contac enviandole todos los datos de los imputs(dataToSend) 
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"
+import { addContact, getContact } from "../Services/contactc.js"; // ajusta la ruta según donde esté tu servicio
+import useGlobalReducer from "../hooks/useGlobalReducer.jsx"
 
 export const FormContact = () => {
+ const { dispatch } = useGlobalReducer()
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
-   event.preventDefault()
-   const dataToSend = {
-       name,
-       phone,
-       email,
-       address
-   }
-   
-  }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const dataToSend = { name, phone, email, address };
+    await addContact(dataToSend);
+   const data = await getContact()
+   dispatch({type: "contacts", payLoad: data })
+
+    // navegamos al listado de contactos
+    navigate("/contacts")
+  };
 
   return (
-    <div className="container mt-4">
+    <div className="row g-0 align-items-center">
       <h2>Add Contacts</h2>
       <form onSubmit={handleSubmit} className="row g-3">
         <div className="col-md-12">
