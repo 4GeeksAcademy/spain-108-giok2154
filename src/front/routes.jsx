@@ -19,6 +19,7 @@ export const router = createBrowserRouter(
       <Route path="/planets" element={<Planets />} />
       <Route path="/character" element={< Character />} />
       <Route path="/form-contact" element={<FormContact/>} />
+      <Route path="/planets" element={<Planets/>}/>
     </Route>
   )
 );
