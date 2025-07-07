@@ -4,8 +4,11 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
-from api.models import db, Users
-
+from api.models import db, Users, Followers, PlanetFavorites, Planets, Characters
+import requests
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
 
 api = Blueprint('api', __name__)
 CORS(api) # Allow CORS requests to this API
@@ -14,4 +17,205 @@ CORS(api) # Allow CORS requests to this API
 @api.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
     response_body = {"message": "Hello! I'm a message that came from the backend,"}
+    return response_body, 200
+
+# Create a route to authenticate your users and return JWTs. The
+# create_access_token() function is used to actually generate the JWT.
+@api.route("/login", methods=["POST"])
+def login():
+    response_body = {}
+    data = request.json
+    email = data.get("email", None).lower()
+    password = request.json.get("password", None)
+    user =db.session.execute(db.select(users).where(user.email == email,
+                                                    users.password == password
+                                                    user.is_active == true)).scalar()
+    if not user:
+        response_body['message'] = 'Bad email or password'
+        return response_body, 401
+    
+    claims = {'user_id': user['id']}
+
+    access_token = create_access_token(identity=username)
+    response_body[message] = 'User logged ok'
+    response_body['access_token'] = access_token
+    return response_body, 200
+
+
+# Protect a route with jwt_required, which will kick out requests
+# without a valid JWT present.
+@api.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
+
+
+@api.route('/users', methods=['GET', 'POST'])
+def users():
+    response_body = {}
+    if request.method == 'GET':
+        response_body['message'] = 'Respuesta del GET'
+        # ejecuando ( SELECT * FROM users )  -- scalars devuelve un iterable (similar a una lista)
+        rows = db.session.execute(db.select(Users).where(Users.is_active)).scalars()
+        # result = [row.serialize() for row in rows]
+        response_body['results'] = [row.serialize() for row in rows]  # list comprehension
+        return response_body, 200
+    if request.method == 'POST': 
+        data = request.json
+        print(data)
+        user = Users()
+        user.email = data.get('email', 'user@email.com')
+        user.password = data.get('password', '1')
+        user.is_active = True
+        user.is_admin = data.get('is_admin', False)
+        user.first_name = data.get('first_name', None)
+        user.last_name = data.get('last_name', None)
+        db.session.add(user)
+        db.session.commit()
+        response_body['results'] = user.serialize()
+        response_body['message'] = 'Respuesta del Post de Users'
+        return response_body, 201
+
+
+@api.route('/users/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def user(id):
+    response_body = {}
+    user = db.session.execute(db.select(Users).where(Users.id == id)).scalar()
+    if not user:
+        response_body['message'] = f'Usuario {id} no encontrado'
+        response_body['results'] = None
+        return response_body, 403         
+    if request.method == 'GET':
+        response_body['message'] = f'Usuario {id} encontrado'
+        response_body['results'] = user.serialize()
+        return response_body, 200
+    if request.method == 'PUT':
+        data = request.json
+        user.email = data.get('email', user.email)
+        user.password = data.get('password', user.password)
+        # user.is_active = True
+        user.is_admin = data.get('is_admin', user.is_admin)
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        db.session.commit()
+        response_body['message'] = f'Usuario {id} modificado'
+        response_body['results'] = user.serialize()
+        return response_body, 200
+    if request.method == 'DELETE':
+        user.is_active = False
+        db.session.commit()
+        response_body['message'] = f'Usuario {id} eliminado'
+        response_body['results'] = None
+        return response_body, 200
+
+
+@api.route('/followers', methods=['POST'])
+def follower():
+    # Voy a recibir el token del usuario del que sigue (follower)
+    follower_id = 9
+    data = request.json
+    following_id = data.get('following_id', None)
+    response_body = {}
+    following = db.session.execute(db.select(Followers).
+                                   where(Followers.follower_id == follower_id and Followers.follower_id == following_id)).scalar()
+    if following:
+        response_body['message'] = f'El usuario {follower_id} ya es seguidor del usuario {following_id}'
+        response_body['results'] = None
+        return response_body, 403
+    if request.method == 'POST':
+        follow = Followers()
+        follow.follower_id = follower_id
+        follow.following_id = following_id
+        db.session.add(follow)
+        db.session.commit()
+        response_body['message'] = f'El usuario {follower_id} ahora segue al usuario {following_id}'
+        response_body['results'] = follow.serialize()
+        return response_body, 200
+
+
+@api.route('/planet-favorites', methods=['GET', 'POST'])
+def planet_favorites():
+    response_body = {}
+
+    if request.method == 'GET':
+        rows = db.session.execute(db.select(PlanetFavorites)).scalars()
+        response_body['results'] = [row.serialize() for row in rows]
+        response_body['message'] = 'Lista de planetas favoritos'
+        return response_body, 200
+
+    if request.method == 'POST':
+        data = request.json
+        favorite = PlanetFavorites()
+        favorite.user_id = data.get('user_id')
+        favorite.planet_id = data.get('planet_id')
+        db.session.add(favorite)
+        db.session.commit()
+        response_body['results'] = favorite.serialize()
+        response_body['message'] = 'Planeta favorito agregado'
+        return response_body, 201
+
+
+@api.route('/planet-favorites/<int:id>', methods=['DELETE'])
+def delete_planet_favorite(id):
+    response_body = {}
+    favorite = db.session.execute(
+        db.select(PlanetFavorites).where(PlanetFavorites.id == id)
+    ).scalar()
+
+    if not favorite:
+        response_body['message'] = f'Favorito con id {id} no encontrado'
+        return response_body, 404
+    db.session.delete(favorite)
+    db.session.commit()
+    response_body['message'] = f'Favorito con id {id} eliminado correctamente'
+    return response_body, 200
+
+@api.route('/characters', methods=['GET'])
+def get_characters():
+    response_body = {}
+    rows = db.session.execute(db.select(Characters)).scalars()
+    response_body['results'] = [row.serialize() for row in rows]
+    response_body['message'] = 'Lista de personajes'
+    return response_body, 200
+
+@api.route('/characters/<int:id>', methods=['GET'])
+def get_character(id):
+    response_body = {}
+    character = db.session.execute(
+        db.select(Characters).where(Characters.id == id)
+    ).scalar()
+
+    if not character:
+        response_body['message'] = f'Personaje con ID {id} no encontrado'
+        return response_body, 404
+
+    response_body['results'] = character.serialize()
+    response_body['message'] = f'Personaje {id} encontrado'
+    return response_body, 200
+
+
+@api.route('/planets', methods=['GET'])
+def get_planets():
+    response_body = {}
+    rows = db.session.execute(db.select(Planets)).scalars()
+    response_body['results'] = [row.serialize() for row in rows]
+    response_body['message'] = 'Lista de planetas'
+    return response_body, 200
+
+
+@api.route('/planets/<int:id>', methods=['GET'])
+def get_planet(id):
+    response_body = {}
+    planet = db.session.execute(
+        db.select(Planets).where(Planets.id == id)
+    ).scalar()
+
+    if not planet:
+        response_body['message'] = f'Planeta con ID {id} no encontrado'
+        return response_body, 404
+
+    response_body['results'] = planet.serialize()
+    response_body['message'] = f'Planeta {id} encontrado'
     return response_body, 200

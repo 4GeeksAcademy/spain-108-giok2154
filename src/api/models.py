@@ -97,23 +97,48 @@ class PlanetFavorites (db.Model):
 
 class Characters(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable = False)
-    height = db.Column(db.String, nullable = True)
-    mass = db.Column(db.String, nullable = True)
-    hair_color = db.Column(db.String, nullable = False)
-    skin_color = db.Column(db.String, nullable = False)
-    eye_color = db.Column(db.String, nullable = False)          
-    birth_year = db.Column(db.String, nullable = False)   
-    gender = db.Column(db.String, nullable = False)
+    name = db.Column(db.String, nullable=False)
+    height = db.Column(db.String, nullable=True)
+    mass = db.Column(db.String, nullable=True)
+    hair_color = db.Column(db.String, nullable=False)
+    skin_color = db.Column(db.String, nullable=False)
+    eye_color = db.Column(db.String, nullable=False)
+    birth_year = db.Column(db.String, nullable=False)
+    gender = db.Column(db.String, nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "height": self.height,
+            "mass": self.mass,
+            "hair_color": self.hair_color,
+            "skin_color": self.skin_color,
+            "eye_color": self.eye_color,
+            "birth_year": self.birth_year,
+            "gender": self.gender
+        }
 
 
 class Planets(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable = False)
-    diameter = db.Column(db.Integer, nullable = True)
-    rotation_period = db.Column(db.String, nullable = True)
-    gravity = db.Column(db.String, nullable = False)
-    population = db.Column(db.Integer, nullable = False)
-    climate = db.Column(db.String, nullable = False)          
-    terrain = db.Column(db.String, nullable = False)   
+    name = db.Column(db.String, nullable=False)
+    diameter = db.Column(db.Integer, nullable=True)
+    rotation_period = db.Column(db.String, nullable=True)
+    gravity = db.Column(db.String, nullable=False)
+    population = db.Column(db.Integer, nullable=False)
+    climate = db.Column(db.String, nullable=False)
+    terrain = db.Column(db.String, nullable=False)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "diameter": self.diameter,
+            "rotation_period": self.rotation_period,
+            "gravity": self.gravity,
+            "population": self.population,
+            "climate": self.climate,
+            "terrain": self.terrain
+        }   
    
