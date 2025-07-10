@@ -16,16 +16,16 @@ export const Navbar = () => {
 
           <div className="d-flex align-items-center gap-3">
             <Link to="/character">
-              <span className="navbar-brand mb-0 h1 text-white">Character</span>
+              <span className="navbar-brand mb-0 h1 text-warning">Character</span>
             </Link>
             <Link to="/planets">
-              <span className="navbar-brand mb-0 h1 text-white">Planets</span>
+              <span className="navbar-brand mb-0 h1 text-warning">Planets</span>
             </Link>
             <Link to="/starships">
-              <span className="navbar-brand mb-0 h1 text-white">Starships</span>
+              <span className="navbar-brand mb-0 h1 text-warning">Starships</span>
             </Link>
             <Link to="/contacts">
-              <span className="navbar-brand mb-0 h1 text-white">Contacts</span>
+              <span className="navbar-brand mb-0 h1 text-warning">Contacts</span>
             </Link>
             <Link to="/">
               <button className="btn btn-warning text-dark">Favoritos</button>

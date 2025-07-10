@@ -31,7 +31,7 @@ export const LoginModal = ({ onClose }) => {
         <div className="modal-dialog" role="document">
           <div className="modal-content ">
             <div className="modal-header">
-              <h5 className="modal-title">Iniciar sesión</h5>
+              <h5 className="modal-title text-warning">Iniciar sesión</h5>
               <button
                 type="button"
                 className="btn-close"

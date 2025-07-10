@@ -9,35 +9,43 @@ import requests
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, get_jwt
+
 
 api = Blueprint('api', __name__)
-CORS(api) # Allow CORS requests to this API
+CORS(api)  # Allow CORS requests to this API
 
 
 @api.route('/hello', methods=['POST', 'GET'])
 def handle_hello():
-    response_body = {"message": "Hello! I'm a message that came from the backend,"}
+    response_body = {
+        "message": "Hello! I'm a message that came from the backend"}
     return response_body, 200
 
 # Create a route to authenticate your users and return JWTs. The
 # create_access_token() function is used to actually generate the JWT.
+
+
 @api.route("/login", methods=["POST"])
 def login():
     response_body = {}
     data = request.json
     email = data.get("email", None).lower()
     password = request.json.get("password", None)
-    user =db.session.execute(db.select(users).where(user.email == email,
-                                                    users.password == password
-                                                    user.is_active == true)).scalar()
+    # Buscar el email y el password en la DB y verificar si is_active es True
+    user = db.session.execute(db.select(Users).where(Users.email == email,
+                                                     Users.password == password,
+                                                     Users.is_active == True)).scalar()
     if not user:
         response_body['message'] = 'Bad email or password'
         return response_body, 401
-    
-    claims = {'user_id': user['id']}
 
-    access_token = create_access_token(identity=username)
-    response_body[message] = 'User logged ok'
+    claims = {'user_id': user.serialize()['id'],
+              'is_admin': user.serialize()['is_admin']}
+    access_token = create_access_token(
+        identity=email, additional_claims=claims)
+
+    response_body['message'] = 'User logged ok'
     response_body['access_token'] = access_token
     return response_body, 200
 
@@ -47,9 +55,13 @@ def login():
 @api.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
+    response_body = {}
     # Access the identity of the current user with get_jwt_identity
     current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
+    additional_claims = get_jwt()  # Los datos adicionales
+    response_body['current_user'] = current_user
+    response_body['aditional_data'] = additional_claims
+    return response_body, 200
 
 
 @api.route('/users', methods=['GET', 'POST'])
@@ -58,15 +70,17 @@ def users():
     if request.method == 'GET':
         response_body['message'] = 'Respuesta del GET'
         # ejecuando ( SELECT * FROM users )  -- scalars devuelve un iterable (similar a una lista)
-        rows = db.session.execute(db.select(Users).where(Users.is_active)).scalars()
+        rows = db.session.execute(
+            db.select(Users).where(Users.is_active)).scalars()
         # result = [row.serialize() for row in rows]
-        response_body['results'] = [row.serialize() for row in rows]  # list comprehension
+        response_body['results'] = [row.serialize()
+                                    for row in rows]  # list comprehension
         return response_body, 200
-    if request.method == 'POST': 
+    if request.method == 'POST':
         data = request.json
         print(data)
         user = Users()
-        user.email = data.get('email', 'user@email.com')
+        user.email = data.get('email', 'user@email.com').to_lower()
         user.password = data.get('password', '1')
         user.is_active = True
         user.is_admin = data.get('is_admin', False)
@@ -80,18 +94,26 @@ def users():
 
 
 @api.route('/users/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@jwt_required()
 def user(id):
     response_body = {}
+    claims = get_jwt()
+    print(claims['user_id'])
+    print(claims['is_admin'])
     user = db.session.execute(db.select(Users).where(Users.id == id)).scalar()
     if not user:
         response_body['message'] = f'Usuario {id} no encontrado'
         response_body['results'] = None
-        return response_body, 403         
+        return response_body, 403
     if request.method == 'GET':
         response_body['message'] = f'Usuario {id} encontrado'
         response_body['results'] = user.serialize()
+        print(user)
         return response_body, 200
     if request.method == 'PUT':
+        if claims['user_id'] != id:
+            response_body['message'] = f'El usuario {claims['user_id']} No tienes permiso para ver los datos de {id}'
+            return response_body, 401
         data = request.json
         user.email = data.get('email', user.email)
         user.password = data.get('password', user.password)
@@ -111,20 +133,28 @@ def user(id):
         return response_body, 200
 
 
-@api.route('/followers', methods=['POST'])
+@api.route('/followers', methods=['GET', 'POST'])
 def follower():
     # Voy a recibir el token del usuario del que sigue (follower)
     follower_id = 9
-    data = request.json
-    following_id = data.get('following_id', None)
     response_body = {}
-    following = db.session.execute(db.select(Followers).
-                                   where(Followers.follower_id == follower_id and Followers.follower_id == following_id)).scalar()
-    if following:
-        response_body['message'] = f'El usuario {follower_id} ya es seguidor del usuario {following_id}'
-        response_body['results'] = None
-        return response_body, 403
+    if request.method == 'GET':
+        followers = db.session.execute(db.select(Followers).where(
+            Followers.follower_id == follower_id)).scalars()
+        response_body['results'] = [row.serialize() for row in followers]
+        response_body['message'] = f'Listado de followes del usurio {follower_id}'
+        for row in followers:
+            print(row)
+        return response_body, 200
     if request.method == 'POST':
+        data = request.json
+        following_id = data.get('following_id', None)
+        following = db.session.execute(db.select(Followers).
+                                       where((Followers.follower_id == follower_id) & (Followers.following_id == following_id))).scalar()
+        if following:
+            response_body['message'] = f'El usuario {follower_id} ya es seguidor del usuario {following_id}'
+            response_body['results'] = None
+            return response_body, 403
         follow = Followers()
         follow.follower_id = follower_id
         follow.following_id = following_id
@@ -172,6 +202,7 @@ def delete_planet_favorite(id):
     response_body['message'] = f'Favorito con id {id} eliminado correctamente'
     return response_body, 200
 
+
 @api.route('/characters', methods=['GET'])
 def get_characters():
     response_body = {}
@@ -179,6 +210,7 @@ def get_characters():
     response_body['results'] = [row.serialize() for row in rows]
     response_body['message'] = 'Lista de personajes'
     return response_body, 200
+
 
 @api.route('/characters/<int:id>', methods=['GET'])
 def get_character(id):
